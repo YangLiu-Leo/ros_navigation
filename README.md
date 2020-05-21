@@ -10,7 +10,7 @@ https://blog.csdn.net/weixin_42048023/article/details/83992879
 
 https://www.cnblogs.com/shhu1993/p/6323699.html
 
-这里用到三个ros官方包，由于我在这三个包的外层文件夹ros_navigation_yang下建了git 仓库，而这三个包本身有.git文件夹，所以我在外层git 提交的时候提交不了里面的这三个包（可能会被忽略掉）。
+这里用到三个ros官方包，由于我在这三个包的外层文件夹ros_navigation_leo下建了git 仓库，而这三个包本身有.git文件夹，所以我在外层git 提交的时候提交不了里面的这三个包（可能会被忽略掉）。
 
 | ros package  | branch                |      |
 | ------ | -------------------------- | ---- |
@@ -20,7 +20,7 @@ https://www.cnblogs.com/shhu1993/p/6323699.html
 
 我的做法是将这三个包下面的git 仓库删除（rm -rf .git）以方便和自己的代码一起提交，如果后续有需要可以重新拉ros官方包放进来，或者本地先git init新建仓库然后git remote关联ros官方的git 仓库链接。
 
-目前ros_navigation_yang这个包，可以放到本地catkin_ws/src里catkin_make编译和运行
+目前ros_navigation_leo这个包，可以放到本地catkin_ws/src里catkin_make编译和运行
 
 ```
 roslaunch navigation_stage move_base_amcl_2.5cm.launch
