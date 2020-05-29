@@ -80,6 +80,8 @@ namespace dwa_local_planner {
       limits.prune_plan = config.prune_plan;
       limits.trans_stopped_vel = config.trans_stopped_vel;
       limits.rot_stopped_vel = config.rot_stopped_vel;
+      // add by Yang
+      odom_topic_ = config.odom_topic;
       planner_util_.reconfigureCB(limits, config.restore_defaults);
 
       // update dwa specific configuration
@@ -108,6 +110,8 @@ namespace dwa_local_planner {
       costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
 
       planner_util_.initialize(tf, costmap, costmap_ros_->getGlobalFrameID());
+      // add by yang
+      ROS_WARN("yang! Dwa local_planner Global frame_id_ %s", costmap_ros_->getGlobalFrameID().c_str());
 
       //create the actual planner that we'll use.. it'll configure itself from the parameter server
       dp_ = boost::shared_ptr<DWAPlanner>(new DWAPlanner(name, &planner_util_));
@@ -195,6 +199,10 @@ namespace dwa_local_planner {
     //compute what trajectory to drive along
     tf::Stamped<tf::Pose> drive_cmds;
     drive_cmds.frame_id_ = costmap_ros_->getBaseFrameID();
+    // add by yang
+    ROS_INFO("yang! Dwa local_planner Base frame_id_ %s", costmap_ros_->getBaseFrameID().c_str());
+    // std::cout << "yang!!!" << std::endl;
+
 
     // call with updated footprint
     base_local_planner::Trajectory path = dp_->findBestPath(global_pose, robot_vel, drive_cmds);

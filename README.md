@@ -8,7 +8,7 @@ http://wiki.ros.org/move_base?distro=kinetic
 
 https://blog.csdn.net/weixin_42048023/article/details/83992879
 
-https://www.cnblogs.com/shhu1993/p/6323699.html
+文档里有许多官方链接：https://www.cnblogs.com/shhu1993/p/6323699.html
 
 这里用到三个ros官方包，由于我在这三个包的外层文件夹ros_navigation_leo下建了git 仓库，而这三个包本身有.git文件夹，所以我在外层git 提交的时候提交不了里面的这三个包（可能会被忽略掉）。
 
@@ -27,6 +27,64 @@ roslaunch navigation_stage move_base_amcl_2.5cm.launch
 ```
 
 
+
+几种可选的规划器插件简介：http://wiki.ros.org/nav_core
+
+**move_base　全局规划类框架**（navfn/NavfnROS类，**目前NavFn类的框架没有分析**）
+
+```mermaid
+graph TD
+	A[move_base] -->| 加载全局规划器插件nav_core::BaseGlobalPlanner| C{navfn::NavfnROS类}
+	A[move_base] -->| 局部规划器　规划失败可能要进行自恢复操作| C1(nav_core::BaseLocalPlanner & nav_core::RecoveryBehavior)
+	C --> | 实例化 代价地图指针|E1{costmap类}
+    C --> | 实例化　智能指针planner_用来实现A*|E{NavFn类}
+    
+    E -->|模板参数　checker　用来碰撞检测的类| F1[navigator::planning::TrajectoryCollisionChecker2d]
+    E -->|模板参数　Planner　A*实现的类| F2[navigator::planning::LatticeLocalReplanner2d]
+    E -->|点云输入| F3[CheckerData　点云或珊格地图]
+    F2 -->|珊格图边和节点及动力学模型的定义和初始化| G1[StateLattice2d]
+    F2 -->|用来计算珊格地图里两个点之间的边是否和障碍物发生碰撞| G2[NaiveTrajectoryCollisionChecker2d]					
+
+```
+
+**A*的改进探索(个人总结)：**不同的启发函数对搜索结果的最优性和速度有影响，需要做权衡
+
+1) 启发函数算得距离小于等于真实距离，A*的结果是最优的
+
+A Heuristic h is admissible (optimistic) if:  h(n) <= h*(n)
+
+如欧式距离是满足条件的，但距离远小于最优方案；
+
+曼哈顿距离不一定最优；
+
+Diagonal Heuristic（h=h*），是最优方案。
+
+2) A*次优化的结果可以带来速度的提升（更贪心），中间有障碍物的情况不会太影响最优性
+
+Weighted A*　启发函数乘大于1的权重使得结果更贪心更快　
+
+Tie Breaker对h做微小的放大，f一样的时候对h进行排序，打破路径里的对称性
+
+3) JPS算法，系统性的实现Tie Breaker，可以减少A*的搜索范围
+
+**move_base　局部规划类框架**（这里使用了新版的实现方式，即以dwa_local_planner::DWAPlannerROS类为例介绍，demo里默认用的是这个类base_local_planner/TrajectoryPlannerROS）
+
+```mermaid
+graph TD
+	A[move_base] -->| 加载局部规划器插件nav_core::BaseLocalPlanner| C{dwa_local_planner::DWAPlannerROS类}
+	A[move_base] -->| 全局规划器　规划失败可能要进行自恢复操作| C1(nav_core::BaseGlobalPlanner & nav_core::RecoveryBehavior)
+    C --> | 继承|E1(nav_core::BaseLocalPlanner类)
+    C --> | 实例化为智能指针dp_|E{dwa_local_planner::DWAPlanner类}
+    C --> | 实例化　代价地图　tf定位|E2(costmap_2d::Costmap2DROS* & tf::Stamped<tf::Pose>)
+ 	C --> | 实例化　公共接口函数　动态参数服务 停止控制器|E3(blp::LocalPlannerUtil & DWAPlannerConfig)
+ 
+    E -->|实例化　util　公共接口函数| F1[blp::LocalPlannerUtil]
+    E -->|实例化　Planner　checker　速度采样轨迹生成打分　dwa实现的类| F2[blp::SimpleTrajectoryGenerator & blp::SimpleScoredSamplingPlanner]
+    E -->|实例化　数据结构　点云输入 轨迹输出| F3[blp::Trajectory输出轨迹 & blp::MapGridCostPoint输入点云或珊格地图]
+    F2 -->|局部轨迹与全局轨迹和局部目标点的距离打分| G1[blp::MapGridCostFunction]
+    F2 -->|局部轨迹距离障碍物远近打分| G2[NaiveTrajectoryCollisionChecker2d]					
+
+```
 
 # (一)  局部路径规划
 
